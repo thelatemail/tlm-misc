@@ -1,7 +1,11 @@
+####################
+## Core functions ##
+####################
+
 ## start a 3d scene function
 site3d <- function(bg="#ffffff", linecol="#000000",
                     xlim=c(-15,15), ylim=c(-15,15), zlim=c(0,5),
-                    theta=-45, phi=20, plot=TRUE) {
+                    theta=-45, phi=20, r=sqrt(3), plot=TRUE) {
     
     par(mar=c(1,1,1,1), bg=bg)
     tm <- persp(matrix(rep(0,4), nrow=2),
@@ -48,14 +52,43 @@ transpts <- function(x, xa=0, ya=0, za=0) {
 ## TODO scale function
 
 
+## functions for surface normal calculation
+
+## crossproduct in 3D
+vector.cross <- function(a, b) {
+    if(length(a)!=3 || length(b)!=3){
+        stop("Cross product is only defined for 3D vectors.");
+    }
+    i1 <- c(2,3,1)
+    i2 <- c(3,1,2)
+    return (a[i1]*b[i2] - a[i2]*b[i1])
+}
+
+## actual calculation of surface normal
+normcalc <- function(x, chunk=FALSE) {
+    if(!is.data.frame(x)) x <- as.data.frame(x)
+    i <- x[2:3,] - x[c(1,1),]
+    iA <- unlist(i[1,])
+    iB <- unlist(i[2,])
+    setNames(as.list(vector.cross(iA,iB)), c("x","y","z"))
+}
 
 ## create a simplified trans3d() function to take x/y/z as a single input
 t3d <- function(x,pmat) do.call(trans3d, c(list(pmat=pmat), x) )
 
 
-## start the plot and save the transformation matrix for x/y/z to x/y for plotting
-tm <- site3d(theta=-45, phi=25)
+###########
+## Setup ##
+###########
 
+
+## start the plot and save the transformation matrix for x/y/z to x/y for plotting
+tm <- site3d(theta=-45, phi=25, r=0)
+
+
+##########
+## Plot ##
+##########
 
 ## floor
 flr <- data.frame(x=c(-5,5,5,-5), y=c(-5,-5,5,5), z=c(0,0,0,0))
@@ -108,11 +141,11 @@ treept <- data.frame(
           1.49, 1.4, 1.17, 1.24, 1.12, 0)
 )
 
-##tree <- lapply(c(0,45,90,135), function(a) rotpts(treept, angle=a, axis="z"))
+tree <- lapply(c(0,45,90,135), function(a) rotpts(treept, angle=a, axis="z"))
 ##invisible(lapply(lapply(tree, transpts, ya=-9), function(x) polygon(t3d(x, pmat=tm), border=treecol)))
 
-
-Map(
+## multiple them trees
+invisible(Map(
     function(x, xa, ya) {
         x <- lapply(x, transpts, xa=xa, ya=ya)
         lapply(x, function(x) polygon(t3d(x, pmat=tm), border=treecol))
@@ -120,11 +153,27 @@ Map(
     list(tree),
     c(-5,-2,1,3),
     -11
-)
+))
 
 
-   
+## test normals
+normcol <- "grey50"
+normlty <- 3
 
+lines(t3d(rbind(wall[1,], normcalc(wall)), tm), col=normcol, lty=normlty)
+lines(t3d(rbind.data.frame(
+    rotpts(wall[1,], axis="z", angle=90),
+    normcalc(rotpts(wall, axis="z", angle=90))),tm), col=normcol, lty=normlty)
+lines(t3d(rbind.data.frame(
+    rotpts(wall[1,], axis="z", angle=180),
+    normcalc(rotpts(wall, axis="z", angle=180))),tm), col=normcol, lty=normlty)
+lines(t3d(rbind.data.frame(
+    rotpts(wall[1,], axis="z", angle=270),
+    normcalc(rotpts(wall, axis="z", angle=270))),tm), col=normcol, lty=normlty)
+
+lines(t3d(rbind(flr[1,], normcalc(flr)), tm), col=normcol, lty=normlty)
+           
+           
 
 
 
@@ -140,4 +189,30 @@ Map(
 ##plot(NA, xlim=c(-3,3), ylim=c(0,3))
 ##abline(v=0, h=0, col="red")
 ##pts <- locator()
+
+
+
+
+##Example:
+##
+##    Find a normal to the plane that passes through the points (1, 0, 2), (2, 3, 0), and (1, 2, 4) 
+##
+##Solution:
+##
+##    By direct substitution, A = ( 2, 3, 0 ) - ( 1, 0, 2) = ( 1, 3, -2 ) and B = (1, 2, 4) - (1, 0, 2) = (0, 2, 2),
+##so their cross product n = ( 10, -2, 2 ).
+
+##dat <- rbind(c(1, 0, 2), c(2, 3, 0), c(1, 2, 4))
+##o <- dat[c(2,3),] - dat[c(1,1),]
+##vector.cross(o[1,], o[2,])
+##
+##site3d(theta=70)
+##points(t3d(unname(data.frame(dat)),tm), col=1:3)
+##polygon(t3d(unname(data.frame(dat)),tm))
+##lines(c(0.138,0.012),c(0.03159,-0.0027))
+
+## the normal point seems to be perpendicular to the first point passed into the equation
+## for a plane
+
+
 
