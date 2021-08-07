@@ -5,12 +5,12 @@
 ## start a 3d scene function
 site3d <- function(bg="#ffffff", linecol="#000000",
                     xlim=c(-15,15), ylim=c(-15,15), zlim=c(0,5),
-                    theta=-45, phi=20, r=sqrt(3), plot=TRUE) {
+                    theta=-45, phi=20, r=sqrt(3), plot=TRUE, box=FALSE,...) {
     
     par(mar=c(1,1,1,1), bg=bg)
     tm <- persp(matrix(rep(0,4), nrow=2),
                 xlim=xlim, ylim=ylim, zlim=zlim,
-                col="#00000000", border=NA, theta=theta, phi=phi, xlab="x", scale=FALSE, box=FALSE)
+                col="#00000000", border=NA, theta=theta, phi=phi, xlab="x", scale=FALSE, box=box, ...)
     if (!plot) {
         dev.off()
         invisible(return(tm))
@@ -73,6 +73,12 @@ normcalc <- function(x, chunk=FALSE) {
     setNames(as.list(vector.cross(iA,iB)), c("x","y","z"))
 }
 
+## n-sided polygon / circle function (if n=high enough, approximates a circle)
+npoly <- function(r, n) {
+  angles <- seq(0, 2*pi, length.out=n)
+  data.frame(x = r*cos(angles), y = r*sin(angles), z=0)
+}
+
 ## create a simplified trans3d() function to take x/y/z as a single input
 t3d <- function(x,pmat) do.call(trans3d, c(list(pmat=pmat), x) )
 
@@ -83,7 +89,7 @@ t3d <- function(x,pmat) do.call(trans3d, c(list(pmat=pmat), x) )
 
 
 ## start the plot and save the transformation matrix for x/y/z to x/y for plotting
-tm <- site3d(theta=-45, phi=25, r=0)
+tm <- site3d(theta=-45, phi=25, r=0, box=TRUE)
 
 
 ##########
@@ -117,6 +123,7 @@ lapply(awn, function(x) polygon(t3d(transpts(rotpts(x, axis="z", angle=-90), ya=
 
 ## roof - floor + 3 metres
 roofcol <- "#cccccc00"
+roof <- transpts(flr, za=3)
 polygon(t3d(transpts(flr, za=3), tm), col=roofcol)
 
 
@@ -127,7 +134,7 @@ polygon(t3d(transpts(door, ya=-5, xa=-4), pmat=tm), col=doorcol)
 
 
 ## add some trees
-treecol = "#119332"
+treecol = "#000000"
 
 treept <- data.frame(
     x = c(-0.15, -0.17, -0.4, -0.75, -0.81, -1.08, 
@@ -142,37 +149,88 @@ treept <- data.frame(
 )
 
 tree <- lapply(c(0,45,90,135), function(a) rotpts(treept, angle=a, axis="z"))
-##invisible(lapply(lapply(tree, transpts, ya=-9), function(x) polygon(t3d(x, pmat=tm), border=treecol)))
 
-## multiple them trees
+## add some slightly randomised trees
 invisible(Map(
     function(x, xa, ya) {
         x <- lapply(x, transpts, xa=xa, ya=ya)
+        ## trees aren't identical so jitter them
+        x <- lapply(x, function(x) lapply(x, jitter, amount=0.1) )
+        ## actually plot
         lapply(x, function(x) polygon(t3d(x, pmat=tm), border=treecol))
     },
     list(tree),
-    c(-5,-2,1,3),
-    -11
+    jitter(c(-6,-3,2,4), 0.15),
+    jitter(-11, 0.15)
 ))
 
 
+## add a couple of outdoor dining tables
+outtab <- list(
+    top  = transpts(npoly(r=1, n=50), za=0.75),
+    cntr = data.frame(x=c(0,0), y=c(0,0), z=c(0,0.75)),
+    leg1 = data.frame(x=c(-0.5,0.5), y=c(0,0), z=c(0,0)),
+    leg2 = data.frame(x=c(0,0), y=c(-0.5,0.5), z=c(0,0))
+)
+
+invisible(Map(
+    function(x, xa, ya) {
+        x <- lapply(x, transpts, xa=xa, ya=ya)
+        lapply(x, function(x) polygon(t3d(x, pmat=tm)))
+    },
+    list(outtab),
+    -8,
+    c(4,1,-2,-5)
+))
+
+
+
+
+
+
+
 ## test normals
-normcol <- "grey50"
-normlty <- 3
+##normcol <- "grey50"
+##normlty <- 3
+##
+##lines(t3d(rbind(wall[1,], normcalc(wall)), tm), col=normcol, lty=normlty)
+##lines(t3d(rbind.data.frame(
+##    rotpts(wall[1,], axis="z", angle=90),
+##    normcalc(rotpts(wall, axis="z", angle=90))),tm), col=normcol, lty=normlty)
+##lines(t3d(rbind.data.frame(
+##    rotpts(wall[1,], axis="z", angle=180),
+##    normcalc(rotpts(wall, axis="z", angle=180))),tm), col=normcol, lty=normlty)
+##lines(t3d(rbind.data.frame(
+##    rotpts(wall[1,], axis="z", angle=270),
+##    normcalc(rotpts(wall, axis="z", angle=270))),tm), col=normcol, lty=normlty)
+##
+##lines(t3d(rbind(flr[1,], normcalc(flr)), tm), col=normcol, lty=normlty)
 
-lines(t3d(rbind(wall[1,], normcalc(wall)), tm), col=normcol, lty=normlty)
-lines(t3d(rbind.data.frame(
-    rotpts(wall[1,], axis="z", angle=90),
-    normcalc(rotpts(wall, axis="z", angle=90))),tm), col=normcol, lty=normlty)
-lines(t3d(rbind.data.frame(
-    rotpts(wall[1,], axis="z", angle=180),
-    normcalc(rotpts(wall, axis="z", angle=180))),tm), col=normcol, lty=normlty)
-lines(t3d(rbind.data.frame(
-    rotpts(wall[1,], axis="z", angle=270),
-    normcalc(rotpts(wall, axis="z", angle=270))),tm), col=normcol, lty=normlty)
+light <- list(x=-15, y=-15, z=5)
+points(t3d(light, tm), col="red", pch=19)
 
-lines(t3d(rbind(flr[1,], normcalc(flr)), tm), col=normcol, lty=normlty)
-           
+tri <- rbind(replace(wall[1,],,c(0,-5,0)), light, normcalc(wall))
+polygon(t3d(cbind(tri[c(1,2)], z=0), tm), lty=2)
+
+dtri <- dist(tri[1:2])
+## horizontal angle
+acos((dtri[1]^2 + dtri[2]^2 - dtri[3]^2) / (2 * dtri[1] * dtri[2])) * 180 / pi
+
+## for totally flat lighting purely on the rotational angle, then
+## the angle needs to be not based on the angle of point-to-point, but
+## rather the angle between the PLANE the light sits on and PLANE of the surface
+## This is currently point lighting, but that is okay
+
+
+dtri <- dist(tri[c(2,3)])
+polygon(t3d(cbind(tri[0], x=0, tri[2:3]), tm), lty=2)
+
+## vertical angle
+acos((dtri[1]^2 + dtri[2]^2 - dtri[3]^2) / (2 * dtri[1] * dtri[2])) * 180 / pi
+
+
+
+
            
 
 
@@ -198,10 +256,10 @@ lines(t3d(rbind(flr[1,], normcalc(flr)), tm), col=normcol, lty=normlty)
 ##    Find a normal to the plane that passes through the points (1, 0, 2), (2, 3, 0), and (1, 2, 4) 
 ##
 ##Solution:
-##
+
 ##    By direct substitution, A = ( 2, 3, 0 ) - ( 1, 0, 2) = ( 1, 3, -2 ) and B = (1, 2, 4) - (1, 0, 2) = (0, 2, 2),
 ##so their cross product n = ( 10, -2, 2 ).
-
+##
 ##dat <- rbind(c(1, 0, 2), c(2, 3, 0), c(1, 2, 4))
 ##o <- dat[c(2,3),] - dat[c(1,1),]
 ##vector.cross(o[1,], o[2,])
@@ -210,9 +268,10 @@ lines(t3d(rbind(flr[1,], normcalc(flr)), tm), col=normcol, lty=normlty)
 ##points(t3d(unname(data.frame(dat)),tm), col=1:3)
 ##polygon(t3d(unname(data.frame(dat)),tm))
 ##lines(c(0.138,0.012),c(0.03159,-0.0027))
-
+##
 ## the normal point seems to be perpendicular to the first point passed into the equation
 ## for a plane
+
 
 
 
