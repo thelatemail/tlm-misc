@@ -8,11 +8,15 @@ C D
 A C
 E B
 F A
-X Z")
-
+X Z
+D A")
 
 g <- graph_from_data_frame(el)
 plot(g)
+
+## add some attributes to edges and vertices
+E(g)$type <- c("y","y","n","n","y","y","n","n","y")
+V(g)$type <- rep(c("big","small"), 4)
 
 ### define a selection of vertices, or paired from/to vertices defining edges
 sel <- c("B","C")
@@ -74,9 +78,9 @@ plot(sg)
 sg <- induced_subgraph(g, V(g)[ .nei(sel) ])
 sg
 plot(sg)
-## A has neighbours - B C F, set is B C F
-## C has neighbours - A B D, set is A B C D F
-## E has neighbours - B,     set is A B C D F 
+## A has neighbours - B C F D, set is B C D F
+## C has neighbours - A B D,   set is A B C D F
+## E has neighbours - B,       set is A B C D F 
 ## so just E will get dropped from the main cluster, along with X and Z
 
 ## just 'in' neighbours
@@ -186,4 +190,55 @@ cmp <- components(g)
 V(g)[names(cmp$membership)]$group <- cmp$membership
 
 data.frame(vertex = V(g)$name, group = V(g)$group)
+
+
+####################
+### PATH FINDING ###
+####################
+
+## set of shortest paths from= starting vertex to ALL vertexes 
+## (including the same starting vertex, in a path of length one)
+shortest_paths(g, from="F")
+
+## find a single shortest path by specifying to=
+shortest_paths(g, from="F", to="D")
+## mode is 'out' by default, which means the path
+## will only follow directions and won't go against an arrow
+## e.g., this fails:
+shortest_paths(g, from="F", to="E")
+## while this succeeds
+shortest_paths(g, from="F", to="E", mode="all")
+## mode can by "all"/"in"/out"
+
+
+## or find ALL the shortest paths
+all_shortest_paths(g, from="D", to="B")
+## if a path travels between the same vertices, but on a different
+## edge, you get it twice, e.g.:
+all_shortest_paths(g, from="D", to="B", mode="all")
+
+
+######################
+### NEIGHBOURHOODS ###
+######################
+
+
+
+##############################
+### export all details out ###
+##############################
+
+## all the edge and vertex attributes in one data.frame
+## includin name to vertex id relationship
+as_long_data_frame(g)
+
+## just the from/to names + edge attributes
+get.data.frame(g)
+
+## just the ends of each edge
+## either as vertex names or vertex ids
+ends(g, E(g))
+ends(g, E(g), names=FALSE)
+
+
 
