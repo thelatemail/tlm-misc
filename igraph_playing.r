@@ -191,6 +191,9 @@ V(g)[names(cmp$membership)]$group <- cmp$membership
 
 data.frame(vertex = V(g)$name, group = V(g)$group)
 
+## can also decompose to separate graphs for a component
+decompose(g)
+
 
 ####################
 ### PATH FINDING ###
@@ -218,10 +221,64 @@ all_shortest_paths(g, from="D", to="B")
 all_shortest_paths(g, from="D", to="B", mode="all")
 
 
-######################
-### NEIGHBOURHOODS ###
-######################
+############################
+### NEIGHBOURHOODS / EGO ###
+############################
 
+## find all neighbours to a vertex
+## with a specified order (1 = immediate neighbour, 2 = one removed, etc)
+ego(g, order=1, c("A","B"))
+## any vertex sequence can be used
+ego(g, order=1, V(g)[c("A","B")])
+## one more removed
+ego(g, order=2, c("A","B"))
+
+## mode is "all" by default, but "in"/"out" can be specified
+
+
+## can jump straight to returning an ego-based graph object too,
+## as opposed to returning just the vertices
+make_ego_graph(g, order=1, c("A","B"))
+
+
+## at a basic level, can also find the 'degree' of vertices,
+## referring to how many adjacent vertices there are
+degree(g)
+degree(g, c("A","B","E"))
+degree(g, mode="in")
+degree(g, mode="out")
+
+
+#####################
+### BOOLEAN LOGIC ###
+#####################
+
+## has different results depending on whether
+## vertices or graphs are input
+  ## vertices 
+eg  <- ego(g, order=1, c("A","B"))
+  ## graph
+egg <- make_ego_graph(g, order=1, c("A","B"))
+
+
+## set difference
+
+  ## vertices 
+## order matters too, just like setdiff
+difference(eg[[1]], eg[[2]])
+difference(eg[[2]], eg[[1]])
+
+  ## graph
+difference(egg[[1]], egg[[2]])
+difference(egg[[2]], egg[[1]])
+
+## union
+union(eg[[1]], eg[[2]])
+union(egg[[1]], egg[[2]])
+
+## intersection
+intersection(eg[[1]], eg[[2]])
+intersection(egg[[1]], egg[[2]])
 
 
 ##############################
