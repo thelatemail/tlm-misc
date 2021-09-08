@@ -28,6 +28,16 @@ selt <- c("C","D")
 ######## SELECT EDGES ########
 ##############################
 
+## straight selection using vertices that join 1-2 / 2-3 etc
+## E.g., get edges A->B and B->C
+## Can turn on or off if they're directed
+E(g, c("A","B","B","C"), directed=TRUE)
+## can specify as a series of vertices 1-2-3, but this
+## isn't reliable if there are multiple edges between
+## a pair
+E(g, path=c("A","B","C"), directed=TRUE)
+
+
 ## select the edges which have one of the listed vertices at either end
 sg <- subgraph.edges(g, E(g)[ .inc(sel) ])
 sg
@@ -254,12 +264,18 @@ degree(g, mode="out")
 #####################
 
 ## has different results depending on whether
-## vertices or graphs are input
+## vertices or edges or graphs are input
   ## vertices 
 eg  <- ego(g, order=1, c("A","B"))
   ## graph
 egg <- make_ego_graph(g, order=1, c("A","B"))
+  ## edges
+ege <- list()
+ege[[1]] <- E(g)[1:5]
+ege[[2]] <- E(g)[4:9]
 
+## can only do set operations on vertices/edges
+## taken from the SAME graph
 
 ## set difference
 
@@ -272,13 +288,19 @@ difference(eg[[2]], eg[[1]])
 difference(egg[[1]], egg[[2]])
 difference(egg[[2]], egg[[1]])
 
+  ## edges
+difference(ege[[1]], ege[[2]])
+difference(ege[[2]], ege[[1]])
+
 ## union
 union(eg[[1]], eg[[2]])
 union(egg[[1]], egg[[2]])
+union(ege[[1]], ege[[2]]) 
 
 ## intersection
 intersection(eg[[1]], eg[[2]])
 intersection(egg[[1]], egg[[2]])
+intersection(ege[[1]], ege[[2]]) 
 
 
 ##############################
@@ -286,7 +308,7 @@ intersection(egg[[1]], egg[[2]])
 ##############################
 
 ## all the edge and vertex attributes in one data.frame
-## includin name to vertex id relationship
+## including name to vertex id relationship
 as_long_data_frame(g)
 
 ## just the from/to names + edge attributes
@@ -296,6 +318,48 @@ get.data.frame(g)
 ## either as vertex names or vertex ids
 ends(g, E(g))
 ends(g, E(g), names=FALSE)
+
+
+################
+### plotting ###
+################
+
+## for full details see
+## ?igraph.plotting
+## or
+## ?plot.igraph
+
+## vertex.argument and edge.argument set the vertex or edge
+## plotting options respectively. E.g.
+
+plot(
+  g, 
+  vertex.size=5:12*5,
+  vertex.color=1:8,
+  vertex.frame.color=NA,
+  vertex.shape = "square",
+  edge.width = 1:9,
+  edge.curved = TRUE,
+  margin = 0,
+  xlab = "xlabel",
+  ylab = "ylabel",
+  main = "main title"
+)
+
+
+
+
+## highlight components with polygon behind them
+mcg <- membership(components(g))
+plot(g, mark.groups = split(seq_along(mcg), mcg))
+
+
+
+
+
+
+
+
 
 
 
