@@ -1,4 +1,6 @@
 library(data.table)
+## only works with data.table version 1.14.3 onwards
+## see https://rdatatable.gitlab.io/data.table/articles/datatable-programming.html
 df1 <- data.table(id = 1:4, a = letters[1:4], b=letters[11:14], c=letters[21:24])
 df2 <- data.table(id = 1:2, a = letters[6:7], b=letters[16:17])
 
