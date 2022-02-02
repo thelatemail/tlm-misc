@@ -1,0 +1,32 @@
+library(data.table)
+df1 <- data.table(id = 1:4, a = letters[1:4], b=letters[11:14], c=letters[21:24])
+df2 <- data.table(id = 1:2, a = letters[6:7], b=letters[16:17])
+
+df1
+#   id a b c
+#1:  1 a k u
+#2:  2 b l v
+#3:  3 c m w
+#4:  4 d n x
+
+df2
+#   id a b
+#1:  1 f p
+#2:  2 g q
+
+##expected after update join
+#   id a b c
+#1:  1 f p u
+#2:  2 g q v
+#3:  3 c m w
+#4:  4 d n x
+
+
+## old method using mget(), which works
+cols <- c("a","b")
+df1[df2, on=.(id), (cols) := mget(paste0("i.", cols))]
+
+
+## new method using env=, also works
+cols <- c("a","b")
+df1[df2,  on=.(id), (cols) := repl, env = list(repl = as.list(paste0("i.", cols)))]
